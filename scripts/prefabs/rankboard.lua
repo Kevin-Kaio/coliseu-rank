@@ -61,9 +61,9 @@ local function getTop5(player)
 	return topRanking
 end
 
-local PopupDialogScreen = require "screens/popupdialog"
+local PopupDialogScreen = require "screens/bigpopupdialog"
 local function CustomPopupDialogScreen(title, text, buttons)
-    local popup = PopupDialogScreen(title, text, buttons)
+    local popup = BigPopupDialogScreen(title, text, buttons)
 
     popup.bg:SetSize(300, 300)
     popup.bg.fill:SetScale(1.6, 1.6) 
@@ -106,7 +106,7 @@ local function MostrarAviso(lista)
         },
     }
 
-    local telaAviso = PopupDialogScreen(titulo, texto, botoes)
+    local telaAviso = CustomPopupDialogScreen(titulo, texto, botoes)
     TheFrontEnd:PushScreen(telaAviso)
 end
 
