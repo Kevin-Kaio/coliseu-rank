@@ -106,7 +106,7 @@ local function MostrarAviso(lista)
         },
     }
 
-    local telaAviso = CustomPopupDialogScreen(titulo, texto, botoes)
+    local telaAviso = PopupDialogScreen(titulo, texto, botoes)
     TheFrontEnd:PushScreen(telaAviso)
 end
 
