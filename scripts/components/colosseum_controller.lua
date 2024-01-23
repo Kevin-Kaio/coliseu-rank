@@ -7,9 +7,21 @@ local taghard = TUNING.COLOSSEUM_TAG_HARD
 local tagendless = TUNING.COLOSSEUM_TAG_ENDLESS
 
 local rewards = {
-    [1] = {["prefab"] = "alterguardianhat", ["number"] = 1, ["mode"] = "any", ["level"] = 15},
-    [2] = {["prefab"] = "krampus_sack", ["number"] = 1, ["mode"] = "hard", ["level"] = 20}
+    [1] = {["prefab"] = "boomerang",     ["number"] = 1, ["mode"] = "easy", ["level"] = 15},
+    [2] = {["prefab"] = "nightsword",    ["number"] = 1, ["mode"] = "easy", ["level"] = 15},
+    [3] = {["prefab"] = "footballhat",   ["number"] = 1, ["mode"] = "easy", ["level"] = 15},
+    [4] = {["prefab"] = "armor_sanity",  ["number"] = 1, ["mode"] = "easy", ["level"] = 15},
+    [5] = {["prefab"] = "amulet",        ["number"] = 1, ["mode"] = "easy", ["level"] = 15},
+    [6] = {["prefab"] = "walking_stick", ["number"] = 1, ["mode"] = "easy", ["level"] = 15},
+
+    [7] = {["prefab"] = "whip",          ["number"] = 1, ["mode"] = "hard", ["level"] = 18},
+    [8] = {["prefab"] = "ruins_bat",     ["number"] = 1, ["mode"] = "hard", ["level"] = 18},
+    [9] = {["prefab"] = "ruinshat",      ["number"] = 1, ["mode"] = "hard", ["level"] = 18},
+    [10] = {["prefab"] = "armorruins",   ["number"] = 1, ["mode"] = "hard", ["level"] = 18},
+    [11] = {["prefab"] = "orangestaff",  ["number"] = 1, ["mode"] = "hard", ["level"] = 18},
+    [12] = {["prefab"] = "yellowamulet", ["number"] = 1, ["mode"] = "hard", ["level"] = 18},
 }
+
 local weapons = {
     [1] = "spear_wathgrithr",
     [2] = "spear_wathgrithr",
@@ -18,6 +30,7 @@ local weapons = {
     [5] = "glasscutter",
     [6] = "batbat"
 }
+
 local armors = {[1] = "wathgrithrhat", [2] = "wathgrithrhat", [3] = "ruinshat", [4] = "footballhat"}
 local foods = {
     [1] = "meat_dried",
@@ -65,6 +78,27 @@ local enemys_myth = {
 }
 local enemys_legion = {[1] = {["prefab"] = "elecarmet", ["difficulty"] = 320}}
 local enemys_hollow = {[1] = {["prefab"] = "hollow_knight", ["difficulty"] = 320}}
+
+local dropsPermitidos = {
+    ["meat"] =          {["percent"] = 20},
+    ["monstermeat"] =   {["percent"] = 20},
+    ["drumstick"] =     {["percent"] = 20},
+    ["yellowgem"] =     {["percent"] = 20},
+    ["orangegem"] =     {["percent"] = 20},
+    ["greengem"] =      {["percent"] = 20},
+    ["redgem"] =        {["percent"] = 20},
+    ["purplegem"] =     {["percent"] = 20},
+    ["bluegem"] =       {["percent"] = 20},
+    ["livinglog"] =     {["percent"] = 20},
+    ["goose_feather"] = {["percent"] = 20},
+    ["gears"] =         {["percent"] = 20},
+    ["houndstooth"] =   {["percent"] = 20},
+    ["silk"] =          {["percent"] = 20},
+}
+
+local tagsGlobal = {"legend_weapon", "myth_removebydespwn"}
+local prefabsGlobal = {"longsword", "blackdragon_sword"}
+
 local function intable(t, v)
     for key, value in pairs(t) do
         if value == v then
@@ -73,54 +107,100 @@ local function intable(t, v)
     end
     return false
 end
-local function transferitems(inv1, inv2, tags, prefabs)
+
+local inventarioTemp = {
+    itemslots = {},
+    equipslots = {},
+}
+
+local function gerenciarInventario(inv1, annotation, toPlayer)
+    if toPlayer then 
+        for _, item in pairs(inventarioTemp.equipslots) do
+            inv1:Equip(item)
+        end
+        
+        for _, item in pairs(inventarioTemp.itemslots) do
+            inv1:GiveItem(item)
+            TheNet:Announce("prefab:" .. item.prefab)
+        end
+        
+        inventarioTemp.itemslots = {}
+        inventarioTemp.equipslots = {}
+        
+        return
+    end
+    
+    local prefabsLocal = {}
+    for _, v in ipairs(prefabsGlobal) do
+        table.insert(prefabsLocal, v)
+    end
+
+    table.insert(prefabsLocal, "cane")
+    table.insert(prefabsLocal, "abigail_flower")
+    
+    local itensTemporarios = {}
+
     for k, item in pairs(inv1.itemslots) do
         local move = true
-        for key, value in pairs(tags) do
+        for key, value in pairs(tagsGlobal) do
             if item:HasTag(value) then
                 move = false
             end
         end
-        if intable(prefabs, item.prefab) then
+        if intable(prefabsGlobal, item.prefab) then
             move = false
         end
         if move then
-            inv2:GiveItem(inv1:RemoveItemBySlot(k))
+            if annotation then
+                table.insert(inventarioTemp.itemslots, item)
+            end
+            
+            inv1:RemoveItemBySlot(k)
         end
     end
+
     for k, v in pairs(inv1.equipslots) do
         if v:HasTag("backpack") then
             local container = v.components.container
             for i, item in pairs(container.slots) do
                 local move = true
-                for key, value in pairs(tags) do
+                for key, value in pairs(tagsGlobal) do
                     if item:HasTag(value) then
                         move = false
                     end
                 end
-                if intable(prefabs, item.prefab) then
+                if intable(prefabsGlobal, item.prefab) then
                     move = false
                 end
                 if move then
-                    inv2:GiveItem(container:RemoveItemBySlot(i))
+                    if annotation then
+                        table.insert(inventarioTemp.itemslots, item)
+                    end
+                    
+                    container:RemoveItemBySlot(i)
                 end
             end
         else
             local move = true
-            for key, value in pairs(tags) do
+            for key, value in pairs(tagsGlobal) do
                 if v:HasTag(value) then
                     move = false
                 end
             end
-            if intable(prefabs, v.prefab) then
+            if intable(prefabsGlobal, v.prefab) then
                 move = false
             end
             if move then
-                inv2:GiveItem(inv1:Unequip(k))
+                if annotation then
+                    table.insert(inventarioTemp.equipslots, v)
+                end 
+                
+                inv1:Unequip(k)
             end
         end
     end
 end
+
 local function cleanup(x, _, z, player, inv)
     local ents = TheSim:FindEntities(x, _, z, R - 0.2)
     for i, v in ipairs(ents) do
@@ -144,14 +224,15 @@ local function cleanup(x, _, z, player, inv)
         end
     end
 end
-local function needweapons(inv, tags, prefabs)
+
+local function needweapons(inv)
     for k, item in pairs(inv.itemslots) do
-        for key, value in pairs(tags) do
+        for key, value in pairs(tagsGlobal) do
             if item:HasTag(value) then
                 return false
             end
         end
-        if intable(prefabs, item.prefab) then
+        if intable(prefabsGlobal, item.prefab) then
             return false
         end
     end
@@ -159,28 +240,29 @@ local function needweapons(inv, tags, prefabs)
         if v:HasTag("backpack") then
             local container = v.components.container
             for i, item in pairs(container.slots) do
-                for key, value in pairs(tags) do
+                for key, value in pairs(tagsGlobal) do
                     if item:HasTag(value) then
                         return false
                     end
                 end
-                if intable(prefabs, item.prefab) then
+                if intable(prefabsGlobal, item.prefab) then
                     return false
                 end
             end
         else
-            for key, value in pairs(tags) do
+            for key, value in pairs(tagsGlobal) do
                 if v:HasTag(value) then
                     return false
                 end
             end
-            if intable(prefabs, v.prefab) then
+            if intable(prefabsGlobal, v.prefab) then
                 return false
             end
         end
     end
     return true
 end
+
 local function getrandomitem(table)
     return table[math.random(#table)]
 end
@@ -344,12 +426,8 @@ function ColosseumController:StartGame(player)
     self.player = player
     self.needweapons = true
     player.components.temperature:SetTemp(25)
-    local tags = {"legend_weapon", "myth_removebydespwn"}
-    local prefabs = {"longsword", "blackdragon_sword"}
-    self.needweapons = needweapons(player.components.inventory, tags, prefabs)
-    table.insert(prefabs, "cane")
-    table.insert(prefabs, "abigail_flower")
-    transferitems(player.components.inventory, self.inst.components.inventory, tags, prefabs)
+    self.needweapons = needweapons(player.components.inventory)
+    gerenciarInventario(player.components.inventory, true, false)
     self.wormhole_in.components.teleporter:SetEnabled(false)
     self.wormhole_out.components.teleporter:SetEnabled(false)
 
@@ -415,6 +493,18 @@ function ColosseumController:NextLevel()
     if levels[0].id == "endless" then
         self:EndlessCreate(self.level + 1)
     end
+	
+	local index = self.level + 1 
+	for i, item in pairs(levels[index].supply) do
+		for count = 1, item.number, 1 do
+			local v = SpawnPrefab(item.prefab)
+			if v.components.weapon == nil or self.needweapons then
+				player.components.inventory:GiveItem(v)
+			else
+				v:Remove()
+			end
+		end
+	end
     local x, _, z = self.inst.Transform:GetWorldPosition()
     self.inst:DoTaskInTime(
         delay - 1,
@@ -439,16 +529,7 @@ function ColosseumController:NextLevel()
                 self.inst.colosseum_title:SetText("Level " .. self.level, 2.3, 25, {255, 150, 0})
                 
                 self.checked = {}
-                for i, item in pairs(levels[self.level].supply) do
-                    for count = 1, item.number, 1 do
-                        local v = SpawnPrefab(item.prefab)
-                        if v.components.weapon == nil or self.needweapons then
-                            player.components.inventory:GiveItem(v)
-                        else
-                            v:Remove()
-                        end
-                    end
-                end
+
                 for i, enemy in pairs(levels[self.level].enemys) do
                     local v = SpawnPrefab(enemy.prefab)
                     v.Transform:SetPosition(x + enemy.position.x, 0, z + enemy.position.z)
@@ -474,9 +555,11 @@ function ColosseumController:NextLevel()
         end
     )
 end
+
 function ColosseumController:EndGame(triumph)
     local x, _, z = self.inst.Transform:GetWorldPosition()
     cleanup(x, _, z, nil, self.inst.components.inventory)
+    gerenciarInventario(self.player.components.inventory, false, false)
     self.inst.colosseum_title:SetText(levels[0].name, 2.3, 25, {255, 150, 0})
     self.isgaming = false
     self.inst.replica.colosseum_controller.isgaming:set(self.isgaming)
@@ -489,6 +572,7 @@ function ColosseumController:EndGame(triumph)
 
     if self.player then
         local player = self.player
+        local delay = 1;
         if player.components.health:IsDead() then
             player:DoTaskInTime(
                 2,
@@ -497,7 +581,17 @@ function ColosseumController:EndGame(triumph)
                     inst:PushEvent("respawnfromghost")
                 end
             )
+            
+            delay = 10;
         end
+        
+        player:DoTaskInTime(
+            delay,
+            function(inst)
+                gerenciarInventario(player.components.inventory, false, true)
+            end
+        )
+            
         player.components.temperature:SetTemp(nil)
     end
     if triumph or levels[0].id == "endless" then
@@ -512,42 +606,45 @@ function ColosseumController:RewardPlayer()
     if x == nil or z == nil then
         return
     end
-    for k, reward in pairs(rewards) do
-        if levels[0].id ~= "endless" and (levels[0].id == reward.mode or reward.mode == "any") then
-            for i = 1, reward.number, 1 do
-                local inst = SpawnPrefab(reward.prefab)
-                if inst.components.inventoryitem then
-                    player.components.inventory:GiveItem(inst)
-                else
-                    inst.Transform:SetPosition(x, _, z)
-                end
-            end
-        elseif levels[0].id == "endless" and self.level >= reward.level then
-            for i = 1, reward.number, 1 do
-                local inst = SpawnPrefab(reward.prefab)
-                if inst.components.inventoryitem then
-                    player.components.inventory:GiveItem(inst)
-                else
-                    inst.Transform:SetPosition(x, _, z)
-                end
-            end
+    
+    local delay = player.components.health:IsDead() and 10 or 1;
+    self.inst:DoTaskInTime(
+        delay,
+        function()
+			for k, reward in pairs(rewards) do
+				if levels[0].id ~= "endless" and levels[0].id == reward.mode then
+					for i = 1, reward.number, 1 do
+						local inst = SpawnPrefab(reward.prefab)
+						player.components.inventory:GiveItem(inst)
+					end
+				elseif levels[0].id == "endless" and self.level >= reward.level then
+					for i = 1, reward.number, 1 do
+						local inst = SpawnPrefab(reward.prefab)
+						player.components.inventory:GiveItem(inst)
+					end
+				end
+			end
         end
-    end
+    )
 
-	if levels[0].id == "any" and tagany then
-		player.colosseum_title:SetText("Campeão Pesadelo", 2.8, 18, {255, 0, 0}) -- Vermelho
-		TheNet:Announce(player.name .. " venceu o desafio no modo Pesadelo!")
+	if levels[0].id == "easy" and tagany then
+		player.colosseum_title:SetText("Campeão Easy", 2.8, 18, {255, 0, 0}) -- Vermelho
+		TheNet:Announce(player.name .. " venceu o desafio no modo Easy!")
 	end
 	if levels[0].id == "hard" and taghard then
-		player.colosseum_title:SetText("Campeão Inferno", 2.8, 18, {128, 0, 128}) -- Roxo
-		TheNet:Announce(player.name .. " venceu o desafio no modo Inferno!")
+		player.colosseum_title:SetText("Campeão Hard", 2.8, 18, {128, 0, 128}) -- Roxo
+		TheNet:Announce(player.name .. " venceu o desafio no modo Hard!")
 	end
 	if levels[0].id == "endless" and tagendless then
-		player.colosseum_title:SetText("Campeão Infinito - " .. self.level, 2.8, 25, {0, 0, 0}) -- Preto
-		TheNet:Announce(player.name .. " alcançou o nivel "..self.level.." no modo Infinito!")
+		if self.level > 1 then
+			TheNet:Announce(player.name .. " alcançou o nivel "..(self.level-1).." no modo Endless!")
+			player.colosseum_title:SetText("Campeão Endless - " .. self.level-1, 2.8, 25, {0, 0, 0}) -- Preto
+		else 
+			TheNet:Announce(player.name .. " não conseguiu concluir nenhum nivel no modo Endless!")
+		end
 		
 		local nomeJogador = player.name
-		local onda = self.level
+		local onda = self.level-1
 		local arquivoRanking = "rank.txt"
 		local linhasRanking = {}
 

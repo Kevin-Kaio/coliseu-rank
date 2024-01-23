@@ -51,7 +51,7 @@ local function getTop5(player)
 				for _ in io.lines(arquivoRanking) do
 					contadorLinhas = contadorLinhas + 1
 				end
-                table.insert(topRanking, {rank = contadorLinhas, nome = nomeJogador, onda = '0'})
+                table.insert(topRanking, {rank = contadorLinhas+1, nome = nomeJogador, onda = '0'})
             end
         end
 		
@@ -61,9 +61,11 @@ local function getTop5(player)
 	return topRanking
 end
 
-local PopupDialogScreen = require "screens/bigpopupdialog"
-local function CustomPopupDialogScreen(title, text, buttons)
-    local popup = BigPopupDialogScreen(title, text, buttons)
+local PopupDialogScreen = require "screens/popupdialog"
+local Button            = require("widgets/button")
+
+local function CustomPopupDialogScreen(title, text)
+    local popup = PopupDialogScreen(title, text, {})
 
     popup.bg:SetSize(300, 300)
     popup.bg.fill:SetScale(1.6, 1.6) 
@@ -71,14 +73,22 @@ local function CustomPopupDialogScreen(title, text, buttons)
     popup.title:SetPosition(0, 230, 0)
 
     popup.text:SetPosition(0, 20, 0)
-	popup.text:SetRegionSize(500, 500)
+    popup.text:SetRegionSize(500, 500)
+    
+    popup.menu:SetPosition(0, -230, 0)
 	
-	popup.menu:SetPosition(-(200*(#buttons-1))/2, -230, 0)
-
+    local closeButton = popup.menu:AddItem("Fechar", nil, false, "small")
+	closeButton.image:SetScale(2.5, 1.4)
+	closeButton.text:SetFont(BUTTONFONT)
+	closeButton.text:SetSize(35)
+    closeButton:SetOnClick(function()
+        popup:Kill()  
+    end)
+	
     return popup
 end
 
-local function MostrarAviso(lista)
+local function MostrarAviso(player, lista)
     local titulo = "TOP RANK"
     local texto = ""
 
@@ -97,17 +107,9 @@ local function MostrarAviso(lista)
         end
     end
 
-    local botoes = {
-        {
-            text = "OK",
-            cb = function()
-                TheFrontEnd:PopScreen()
-            end,
-        },
-    }
-
-    local telaAviso = CustomPopupDialogScreen(titulo, texto, botoes)
-    TheFrontEnd:PushScreen(telaAviso)
+    local telaAviso = CustomPopupDialogScreen(titulo, texto)
+	player.HUD:AddChild(telaAviso)
+    --TheFrontEnd:PushScreen(telaAviso)
 end
 
 
@@ -115,7 +117,7 @@ local function OnOpenRank(inst, doer)
     inst.components.activatable.inactive = true
 	if doer then
 		local topPlayers = getTop5(doer:GetDisplayName())
-		MostrarAviso(topPlayers)
+		MostrarAviso(doer, topPlayers)
 	end
 end
 
