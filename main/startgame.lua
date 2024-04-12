@@ -12,6 +12,23 @@ local ticket_options = {
 local ticket = ticket_options[GetModConfigData("ticket")]
 ticket.name = STRINGS.NAMES[string.upper(ticket.prefab)] or "Item desconhecido"
 local function checkticket(inv)
+    for k, v in pairs(inv.equipslots) do
+        if v:HasTag("backpack") then
+            local container = v.components.container
+            for i, item in pairs(container.slots) do
+                if item.prefab == ticket.prefab then
+                    local itemnumber = item.components.stackable:StackSize()
+                    if itemnumber > ticket.number then
+                        item.components.stackable:SetStackSize(itemnumber - ticket.number)
+                        return true
+                    elseif itemnumber == ticket.number then
+                        item:Remove()
+                        return true
+                    end
+                end
+            end
+        end
+    end
     for k, item in pairs(inv.itemslots) do
         if item.prefab == ticket.prefab then
             local itemnumber = item.components.stackable:StackSize()
@@ -21,23 +38,6 @@ local function checkticket(inv)
             elseif itemnumber == ticket.number then
                 item:Remove()
                 return true
-            end
-        end
-    end
-    for k, v in pairs(inv.equipslots) do
-        if v:HasTag("backpack") then
-            local container = v.components.container
-            for i, item in pairs(container.slots) do
-                if item.prefab == ticket.prefab then
-                    local itemnumber = item.components.stackable:StackSize()
-                    if itemnumber >= ticket.number then
-                        item.components.stackable:SetStackSize(itemnumber - ticket.number)
-                        return true
-                    elseif itemnumber == ticket.number then
-                        item:Remove()
-                        return true
-                    end
-                end
             end
         end
     end

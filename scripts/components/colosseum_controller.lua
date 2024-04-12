@@ -8,11 +8,11 @@ local tagendless = TUNING.COLOSSEUM_TAG_ENDLESS
 
 local rewards = {
     [1] = {["prefab"] = "boomerang",     ["number"] = 1, ["mode"] = "easy", ["level"] = 15},
-    [2] = {["prefab"] = "nightsword",    ["number"] = 1, ["mode"] = "easy", ["level"] = 15},
-    [3] = {["prefab"] = "footballhat",   ["number"] = 1, ["mode"] = "easy", ["level"] = 15},
-    [4] = {["prefab"] = "armor_sanity",  ["number"] = 1, ["mode"] = "easy", ["level"] = 15},
-    [5] = {["prefab"] = "amulet",        ["number"] = 1, ["mode"] = "easy", ["level"] = 15},
-    [6] = {["prefab"] = "walking_stick", ["number"] = 1, ["mode"] = "easy", ["level"] = 15},
+	[2] = {["prefab"] = "nightsword",    ["number"] = 1, ["mode"] = "easy", ["level"] = 15},
+	[3] = {["prefab"] = "footballhat",   ["number"] = 1, ["mode"] = "easy", ["level"] = 15},
+	[4] = {["prefab"] = "armor_sanity",  ["number"] = 1, ["mode"] = "easy", ["level"] = 15},
+	[5] = {["prefab"] = "amulet",        ["number"] = 1, ["mode"] = "easy", ["level"] = 15},
+	[6] = {["prefab"] = "walking_stick", ["number"] = 1, ["mode"] = "easy", ["level"] = 15},
 
     [7] = {["prefab"] = "whip",          ["number"] = 1, ["mode"] = "hard", ["level"] = 18},
     [8] = {["prefab"] = "ruins_bat",     ["number"] = 1, ["mode"] = "hard", ["level"] = 18},
@@ -48,6 +48,7 @@ local foods = {
     [13] = "jellybean_spice_chili",
     [14] = "voltgoatjelly_spice_chili"
 }
+
 local enemys = {
     [1] = {["prefab"] = "tallbird", ["difficulty"] = 80},
     [2] = {["prefab"] = "pigguard", ["difficulty"] = 80},
@@ -70,30 +71,32 @@ local enemys = {
     [19] = {["prefab"] = "bunnyman", ["difficulty"] = 60},
     [20] = {["prefab"] = "bearger", ["difficulty"] = 230}
 }
+
 local enemys_myth = {
     [1] = {["prefab"] = "blackbear", ["difficulty"] = 250},
     [2] = {["prefab"] = "rhino3_blue", ["difficulty"] = 260},
     [3] = {["prefab"] = "rhino3_red", ["difficulty"] = 260},
     [4] = {["prefab"] = "rhino3_yellow", ["difficulty"] = 260}
 }
+
 local enemys_legion = {[1] = {["prefab"] = "elecarmet", ["difficulty"] = 320}}
 local enemys_hollow = {[1] = {["prefab"] = "hollow_knight", ["difficulty"] = 320}}
 
 local dropsPermitidos = {
-    ["meat"] =          {["percent"] = 20},
-    ["monstermeat"] =   {["percent"] = 20},
-    ["drumstick"] =     {["percent"] = 20},
-    ["yellowgem"] =     {["percent"] = 20},
-    ["orangegem"] =     {["percent"] = 20},
-    ["greengem"] =      {["percent"] = 20},
-    ["redgem"] =        {["percent"] = 20},
-    ["purplegem"] =     {["percent"] = 20},
-    ["bluegem"] =       {["percent"] = 20},
-    ["livinglog"] =     {["percent"] = 20},
-    ["goose_feather"] = {["percent"] = 20},
-    ["gears"] =         {["percent"] = 20},
-    ["houndstooth"] =   {["percent"] = 20},
-    ["silk"] =          {["percent"] = 20},
+    ["meat"] =          {["percent"] = 0.2},
+    ["monstermeat"] =   {["percent"] = 0.2},
+    ["drumstick"] =     {["percent"] = 0.2},
+    ["yellowgem"] =     {["percent"] = 0.2},
+    ["orangegem"] =     {["percent"] = 0.2},
+    ["greengem"] =      {["percent"] = 0.2},
+    ["redgem"] =        {["percent"] = 0.2},
+    ["purplegem"] =     {["percent"] = 0.2},
+    ["bluegem"] =       {["percent"] = 0.2},
+    ["livinglog"] =     {["percent"] = 0.2},
+    ["goose_feather"] = {["percent"] = 0.2},
+    ["gears"] =         {["percent"] = 0.2},
+    ["houndstooth"] =   {["percent"] = 0.2},
+    ["silk"] =          {["percent"] = 0.2},
 }
 
 local tagsGlobal = {"legend_weapon", "myth_removebydespwn"}
@@ -113,15 +116,16 @@ local inventarioTemp = {
     equipslots = {},
 }
 
-local function gerenciarInventario(inv1, annotation, toPlayer)
+local function gerenciarInventario(player, mover, toPlayer)
     if toPlayer then 
+        -- Equipa os itens do inventarioTemp.equipslots
         for _, item in pairs(inventarioTemp.equipslots) do
-            inv1:Equip(item)
+            player.components.inventory:Equip(item)
         end
-        
+    
+        -- Move o inventarioTemp.itemslots para o jogador
         for _, item in pairs(inventarioTemp.itemslots) do
-            inv1:GiveItem(item)
-            TheNet:Announce("prefab:" .. item.prefab)
+            player.components.inventory:GiveItem(item)
         end
         
         inventarioTemp.itemslots = {}
@@ -138,65 +142,41 @@ local function gerenciarInventario(inv1, annotation, toPlayer)
     table.insert(prefabsLocal, "cane")
     table.insert(prefabsLocal, "abigail_flower")
     
-    local itensTemporarios = {}
-
-    for k, item in pairs(inv1.itemslots) do
-        local move = true
+    -- Move todo o inventário do jogador para o inventarioTemp.itemslots
+    for _, item in pairs(player.components.inventory.itemslots) do
+        local moverItem = true
         for key, value in pairs(tagsGlobal) do
             if item:HasTag(value) then
-                move = false
+                moverItem = false
             end
         end
-        if intable(prefabsGlobal, item.prefab) then
-            move = false
-        end
-        if move then
-            if annotation then
+    
+        if moverItem and (not intable(prefabsLocal, item.prefab)) then
+            if mover then            
                 table.insert(inventarioTemp.itemslots, item)
             end
             
-            inv1:RemoveItemBySlot(k)
+            player.components.inventory:RemoveItem(item)
         end
     end
-
-    for k, v in pairs(inv1.equipslots) do
-        if v:HasTag("backpack") then
-            local container = v.components.container
-            for i, item in pairs(container.slots) do
-                local move = true
-                for key, value in pairs(tagsGlobal) do
-                    if item:HasTag(value) then
-                        move = false
-                    end
-                end
-                if intable(prefabsGlobal, item.prefab) then
-                    move = false
-                end
-                if move then
-                    if annotation then
-                        table.insert(inventarioTemp.itemslots, item)
-                    end
-                    
-                    container:RemoveItemBySlot(i)
-                end
+    
+    -- Move todos os itens equipados para o inventarioTemp.equipslots 
+    for k, item in pairs(player.components.inventory.equipslots) do
+        if mover then            
+            table.insert(inventarioTemp.equipslots, item)
+        end
+        
+        player.components.inventory:Unequip(k)
+    end
+    
+    -- Move todos os itens na mochila para o inventarioTemp.itemslots
+    if player.components.inventory:GetOverflowContainer() then
+        for k, item in pairs(player.components.inventory:GetOverflowContainer().slots) do
+            if mover then            
+                table.insert(inventarioTemp.itemslots, item)
             end
-        else
-            local move = true
-            for key, value in pairs(tagsGlobal) do
-                if v:HasTag(value) then
-                    move = false
-                end
-            end
-            if intable(prefabsGlobal, v.prefab) then
-                move = false
-            end
-            if move then
-                if annotation then
-                    table.insert(inventarioTemp.equipslots, v)
-                end 
-                
-                inv1:Unequip(k)
-            end
+            
+            player.components.inventory:GetOverflowContainer():RemoveItem(item)
         end
     end
 end
@@ -208,10 +188,22 @@ local function cleanup(x, _, z, player, inv)
             not v:HasTag("player") and not v:HasTag("colosseum") and not v:HasTag("FX") and not v:HasTag("NOCLICK") and
                 not v:HasTag("critter") and
                 not v.inlimbo and
-                v.prefab ~= "abigail"
+                v.prefab ~= "abigail" 
          then
             local x, _, z = v.Transform:GetWorldPosition()
-            if inv ~= nil and not inv:IsFull() and v.components.inventoryitem and v.components.health == nil then
+            if inv ~= nil and not inv:IsFull() and v.components.inventoryitem and v.components.health == nil and dropsPermitidos[v.prefab] ~= nil then
+                if v.components.stackable then
+                    local novoValor = v.components.stackable:StackSize() * dropsPermitidos[v.prefab]['percent']
+                    
+                    if novoValor >= 1 then
+                        novoValor = math.floor(novoValor + 0.5) 
+                    else
+                        novoValor = 1
+                    end
+                    
+                    v.components.stackable:SetStackSize(novoValor)
+                end
+
                 inv:GiveItem(v)
             else
                 v:Remove()
@@ -415,6 +407,7 @@ function ColosseumController:PseudoInit()
     self.inst.colosseum_title.entity:SetParent(self.inst.entity)
     self.inst.colosseum_title:SetText(levels[0].name, 2.3, 25, {255, 150, 0})
 end
+
 function ColosseumController:StartGame(player)
     local x, _, z = self.inst.Transform:GetWorldPosition()
     cleanup(x, _, z, player)
@@ -427,7 +420,7 @@ function ColosseumController:StartGame(player)
     self.needweapons = true
     player.components.temperature:SetTemp(25)
     self.needweapons = needweapons(player.components.inventory)
-    gerenciarInventario(player.components.inventory, true, false)
+    gerenciarInventario(player, true, false)
     self.wormhole_in.components.teleporter:SetEnabled(false)
     self.wormhole_out.components.teleporter:SetEnabled(false)
 
@@ -559,7 +552,7 @@ end
 function ColosseumController:EndGame(triumph)
     local x, _, z = self.inst.Transform:GetWorldPosition()
     cleanup(x, _, z, nil, self.inst.components.inventory)
-    gerenciarInventario(self.player.components.inventory, false, false)
+    gerenciarInventario(self.player, false, false)
     self.inst.colosseum_title:SetText(levels[0].name, 2.3, 25, {255, 150, 0})
     self.isgaming = false
     self.inst.replica.colosseum_controller.isgaming:set(self.isgaming)
@@ -588,7 +581,7 @@ function ColosseumController:EndGame(triumph)
         player:DoTaskInTime(
             delay,
             function(inst)
-                gerenciarInventario(player.components.inventory, false, true)
+                gerenciarInventario(player, false, true)
             end
         )
             
@@ -693,7 +686,7 @@ function ColosseumController:SwitchMode(doer)
 end
 function ColosseumController:EndlessCreate(level)
     levels[level] = {["supply"] = {}, ["enemys"] = {}}
-    if (level - 1) % 6 == 0 and self.needweapons then
+    if self.needweapons then
         table.insert(levels[level].supply, {["prefab"] = getrandomitem(weapons), ["number"] = 1})
     end
     if (level - 1) % 3 == 0 then
